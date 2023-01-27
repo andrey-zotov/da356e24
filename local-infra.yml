@@ -1,0 +1,28 @@
+services:
+
+  movie-dev-localstack:
+    image: localstack/localstack:latest
+    environment:
+      - AWS_DEFAULT_REGION=ap-southeast-1
+      - EDGE_PORT=4567
+      - SERVICES=sqs,s3
+    ports:
+      - '4567:4567'
+    volumes:
+      - movie-dev-localstack:/var/lib/localstack
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - movie-dev-net
+
+  movie-dev-redis:
+    image: redis:7-alpine
+    networks:
+      - movie-dev-net
+
+volumes:
+  movie-dev-localstack:
+
+networks:
+  movie-dev-net:
+    driver: bridge
+    name: movie-dev-net
