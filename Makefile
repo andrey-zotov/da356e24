@@ -13,10 +13,16 @@ awslocal-upload-data:
 dc-build-movie-server:
 	docker-compose --profile movie_server build
 
+dc-build-load-runner:
+	docker-compose --profile load_runner build
+
 dc-build: dc-build-movie-server
 
 dc-start: dc-build awslocal-create-bucket awslocal-upload-data
 	docker-compose --profile movie_server up
+
+dc-stress: dc-build dc-build-load-runner
+	docker-compose --profile load_runner up
 
 local-start-infra:
 	-docker-compose -f local-infra.yml -p movie-dev-infra up

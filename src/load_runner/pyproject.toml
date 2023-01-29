@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "load-runner"
+version = "0.1.0"
+description = ""
+authors = ["Andrey Zotov <andrey.n.zotov@gmail.com>"]
+readme = "README.md"
+packages = [{include = "load_runner"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+uvicorn = "^0.20.0"
+fastapi = "^0.89.1"
+environ = "^1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
