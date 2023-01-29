@@ -10,8 +10,6 @@ packages = [{include = "movie_db_server"}]
 python = "^3.10"
 fastapi = "^0.89.1"
 environ = "^1.0"
-redis = "^4.4.2"
-aioredis = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -2,18 +2,11 @@ import os
 import time
 from functools import wraps
 from fastapi import FastAPI, Request
-import aioredis
-import redis
 import json
-import pickle
 import logging
 
 
 app = FastAPI()
-
-redis_url = os.getenv("REDIS_URL")
-ards = aioredis.from_url(redis_url)  # , decode_responses=True
-rds = redis.from_url(redis_url)
 
 
 def timeit(func):
@@ -80,23 +73,9 @@ def create_indices():
                 ids_by_genre[genre] = [id]
 
 
-@timeit
-def index_titles(data):
-    unique_data = {_["title"] for _ in data}
-    data_by_keys = {k: [_ for _ in data if _["title"] == k] for k in unique_data}
-    rds.mset({k: pickle.dumps(v) for k, v in data_by_keys})
-
-@timeit
-def index_years(data):
-    unique_data = {_["year"] for _ in data}
-    data_by_keys = {k: [_ for _ in data if _["year"] == k] for k in unique_data}
-    rds.mset({k: pickle.dumps(v) for k, v in data_by_keys})
-
 
 assign_ids(raw_data)
 create_indices()
-# index_data()
-# index_titles(mdata)
 
 
 # @app.middleware("http")
@@ -110,13 +89,10 @@ create_indices()
 
 @app.get("/")
 async def root():
-    #val = await ards.get("Hell Fest")
-    #val = pickle.loads(val)
+    keys = {_ for _ in ids_by_title.keys() if "Hell" in _}
 
-    #ids = ids_by_title["Hell Fest"]
+    #keys = {"Hell Fest"}
 
-    #keys = {_ for _ in ids_by_title.keys() if "Hell" in _}
-    keys = {"Hell Fest"}
     ids_by_key = [ids_by_title[k] for k in keys]
     ids = {_ for sublist in ids_by_key for _ in sublist}
     val = [data_by_id[k] for k in ids][0]
