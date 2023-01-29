@@ -1,1 +1,1 @@
-A stress testing service for movie db search service
+Stress testing for movie db search service using locust

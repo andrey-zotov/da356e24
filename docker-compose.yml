@@ -21,7 +21,7 @@ services:
     env_file:
       - ./.env.dev
     ports:
-      - 8102:80
+      - 8089:80
     networks:
       - movie-dev-net
     profiles:
