@@ -1,7 +1,8 @@
 import sys
 import time
+from dataclasses import dataclass
 from functools import wraps
-from typing import Iterable, Any, List, Dict
+from typing import Iterable, Any, List, Dict, Set, Optional
 
 from fastapi import FastAPI, Request
 import json
@@ -23,6 +24,25 @@ def timeit(func):
     return timeit_wrapper
 
 
+@dataclass
+class Movie:
+    id: Optional[int]
+    title: str
+    year: int
+    cast: Set[str]
+    genres: Set[str]
+
+    @staticmethod
+    def from_json_dict(item: Dict):
+        return Movie(
+            id=None,
+            title=item["title"],
+            year=item["year"],
+            cast=set(item["cast"]),
+            genres=set(item["genres"])
+        )
+
+
 class SearchService:
 
     # mem/cpu optimization - intern loaded strings
@@ -42,7 +62,7 @@ class SearchService:
         return dct
 
     def __init__(self, filename: str):
-        self.data_by_id: Dict[int, Dict] = {}
+        self.data_by_id: Dict[int, Movie] = {}
         self.ids_by_title: Dict[str, List[int]] = {}
         self.ids_by_year: Dict[int, List[int]] = {}  # remove
         self.ids_by_cast: Dict[str, List[int]] = {}
@@ -55,39 +75,40 @@ class SearchService:
     @timeit
     def load_file(self, filename: str) -> Any:
         with open(filename, "r", encoding="utf8") as _:
-            return json.load(_, object_pairs_hook=SearchService.deduplicate_strings)
+            json_data = json.load(_, object_pairs_hook=SearchService.deduplicate_strings)
+            return [Movie.from_json_dict(_) for _ in json_data]
 
     @timeit
     def assign_ids(self):
         for i, item in enumerate(self.raw_data):
-            item['id'] = i
+            item.id = i
 
     @timeit
     def create_indices(self):
 
         for item in self.raw_data:
-            id = item["id"]
+            id = item.id
             self.data_by_id[id] = item
 
-            title = item["title"]
+            title = item.title
             if title in self.ids_by_title:
                 self.ids_by_title[title].append(id)
             else:
                 self.ids_by_title[title] = [id]
 
-            year = item["year"]
+            year = item.year
             if year in self.ids_by_year:
                 self.ids_by_year[year].append(id)
             else:
                 self.ids_by_year[year] = [id]
 
-            for cast in item["cast"]:
+            for cast in item.cast:
                 if cast in self.ids_by_cast:
                     self.ids_by_cast[cast].append(id)
                 else:
                     self.ids_by_cast[cast] = [id]
 
-            for genre in item["genres"]:
+            for genre in item.genres:
                 if genre in self.ids_by_genre:
                     self.ids_by_genre[genre].append(id)
                 else:
