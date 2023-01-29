@@ -2,11 +2,9 @@ version: '3.8'
 
 services:
   indexer:
-    build: ./indexer
+    build: ./src/py_movie_db
     volumes:
-      - ./backend/:/usr/src/backend/
-    ports:
-      - 8000:8000
+      - ./src/py_movie_db/:/usr/src/py_movie_db/
     env_file:
       - ./.env.dev
     networks:
@@ -15,15 +13,17 @@ services:
       - indexer
 
   server:
-    build: ./server
+    build: ./src/py_movie_db
     volumes:
-      - ./backend/:/usr/src/backend/
+      - ./src/py_movie_db/:/usr/src/py_movie_db/
     env_file:
       - ./.env.dev
+    ports:
+      - 8000:8000
     networks:
       - postcard-dev-net
     profiles:
-      - server
+      - src
 
 networks:
   postcard-dev-net:

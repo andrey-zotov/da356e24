@@ -2,7 +2,7 @@ include .env.dev
 export
 
 local-start-server:
-	cd server && uvicorn main:app --reload --port 8100 --no-use-colors
+	cd src/py_movie_db && uvicorn main:app --reload --port 8100 --no-use-colors
 
 awslocal-create-bucket:
 	-awslocal --endpoint-url=http://host.docker.internal:4567 s3api create-bucket --bucket $(AWS_STORAGE_BUCKET_NAME) --create-bucket-configuration "{\"LocationConstraint\": \"$(AWS_DEFAULT_REGION)\"}"
