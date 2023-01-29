@@ -16,6 +16,8 @@ services:
 
   movie-dev-redis:
     image: redis:7-alpine
+    ports:
+      - '16379:6379'
     networks:
       - movie-dev-net
 
