@@ -2,6 +2,7 @@ import time
 from fastapi import FastAPI, Request
 
 from movies.search_service import SearchService, SearchResponse
+from utils.perf_tools import PerfCounters, perf_counters
 
 app = FastAPI()
 
@@ -25,6 +26,15 @@ async def search(title_contains: str = "", year: int = 0, cast: str = "", genre:
     return movies
 
 
+@app.get("/perf_counters", response_model=PerfCounters)
+async def get_perf_counters():
+    """
+    Internal - get perf counters
+    """
+
+    return perf_counters
+
+
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     """
@@ -34,5 +44,6 @@ async def add_process_time_header(request: Request, call_next):
     response = await call_next(request)
     end_time = time.perf_counter()
     total_time = end_time - start_time
-    print(f'HTTP request: {total_time * 1000:.1f}ms')
+    key = "http_search_request" + request.url.path
+    perf_counters.increment(key, total_time)
     return response
