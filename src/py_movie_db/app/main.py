@@ -6,7 +6,7 @@ from utils.perf_tools import PerfCounters, perf_counters
 
 app = FastAPI()
 
-search_service = SearchService("data-full.json")
+search_service = SearchService()
 
 
 @app.get("/", response_model=SearchResponse)

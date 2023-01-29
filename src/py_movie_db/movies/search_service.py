@@ -1,6 +1,10 @@
 import sys
 import functools
 import itertools
+from os import environ
+
+import boto3
+
 from utils.perf_tools import measure_time_elapsed
 from dataclasses import dataclass
 import json
@@ -61,22 +65,32 @@ class SearchService:
                 dct[sys.intern(k)] = v
         return dct
 
-    def __init__(self, filename: str):
+    def __init__(self):
         self.data_by_id: Dict[int, Movie] = {}
         self.ids_by_title: Dict[str, List[int]] = {}
         self.ids_by_year: Dict[int, List[int]] = {}  # remove
         self.ids_by_cast: Dict[str, List[int]] = {}
         self.ids_by_genre: Dict[str, List[int]] = {}  # remove
 
-        self.movies_list = self.load_file(filename)
+        self.movies_list = self.load_file()
         self.assign_ids()
         self.create_indices()
 
     @measure_time_elapsed
-    def load_file(self, filename: str) -> List[Movie]:
-        with open(filename, "r", encoding="utf8") as _:
-            json_data = json.load(_, object_pairs_hook=SearchService.deduplicate_strings)
+    def load_file(self) -> List[Movie]:
+        s3 = boto3.client("s3", endpoint_url=environ.get("AWS_ENDPOINT_URL"))
+
+        bucket_name = environ.get("AWS_STORAGE_BUCKET_NAME")
+
+        s3objects = s3.list_objects(Bucket=bucket_name)
+        for item in s3objects.get('Contents'):
+            data = s3.get_object(Bucket=bucket_name, Key=item.get('Key'))
+            contents = data['Body'].read()
+            json_str = contents.decode("utf-8")
+            json_data = json.loads(json_str, object_pairs_hook=SearchService.deduplicate_strings)
             return [Movie.from_json_dict(_) for _ in json_data]
+
+        raise Exception("Unable to read data from S3")
 
     def assign_ids(self):
         for i, item in enumerate(self.movies_list):

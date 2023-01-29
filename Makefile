@@ -7,12 +7,15 @@ local-start-server:
 awslocal-create-bucket:
 	-awslocal --endpoint-url=http://host.docker.internal:4567 s3api create-bucket --bucket $(AWS_STORAGE_BUCKET_NAME) --create-bucket-configuration "{\"LocationConstraint\": \"$(AWS_DEFAULT_REGION)\"}"
 
+awslocal-upload-data:
+	awslocal --endpoint-url=http://host.docker.internal:4567 s3 cp ./data.json s3://$(AWS_STORAGE_BUCKET_NAME)
+
 dc-build-movie-server:
 	docker-compose --profile movie_server build
 
 dc-build: dc-build-movie-server
 
-dc-start: dc-build awslocal-create-bucket
+dc-start: dc-build awslocal-create-bucket awslocal-upload-data
 	docker-compose --profile movie_server up
 
 local-start-infra:
