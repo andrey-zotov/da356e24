@@ -5,7 +5,7 @@ import functools
 import time
 
 
-def timeit(func):
+def print_time_elapsed(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()

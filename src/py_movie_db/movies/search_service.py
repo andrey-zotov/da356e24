@@ -1,7 +1,7 @@
 import sys
 import functools
 import itertools
-import timeit
+from utils.perf_tools import print_time_elapsed
 from dataclasses import dataclass
 import json
 from typing import Iterable, List, Dict, Set, Optional
@@ -32,7 +32,18 @@ class Movie:
         )
 
 
+@dataclass
+class SearchResponse:
+    items: List[Movie]
+    page: int
+    size: int
+    has_more: bool
+
+
 class SearchService:
+    """
+    Search service - loads movie json file and accept queries against it
+    """
 
     # mem/cpu optimization - intern loaded strings
     @staticmethod
@@ -61,18 +72,18 @@ class SearchService:
         self.assign_ids()
         self.create_indices()
 
-    @timeit
+    @print_time_elapsed
     def load_file(self, filename: str) -> List[Movie]:
         with open(filename, "r", encoding="utf8") as _:
             json_data = json.load(_, object_pairs_hook=SearchService.deduplicate_strings)
             return [Movie.from_json_dict(_) for _ in json_data]
 
-    @timeit
+    @print_time_elapsed
     def assign_ids(self):
         for i, item in enumerate(self.movies_list):
             item.id = i
 
-    @timeit
+    @print_time_elapsed
     def create_indices(self):
 
         for item in self.movies_list:
@@ -103,7 +114,7 @@ class SearchService:
                 else:
                     self.ids_by_genre[genre] = [id]
 
-    @timeit
+    @print_time_elapsed
     def find_movies_x(self, title: str, year: int, cast: str, genre: str, page: int, page_size: int) -> Iterable[Movie]:
         keys = {_ for _ in self.ids_by_title.keys() if title in _}
 
@@ -112,8 +123,8 @@ class SearchService:
         res = [self.data_by_id[k] for k in ids]
         return res
 
-    @timeit
-    def find_movies(self, title_contains: str, year: int, cast: str, genre: str, page: int, page_size: int) -> Dict:
+    @print_time_elapsed
+    def find_movies(self, title_contains: str, year: int, cast: str, genre: str, page: int, page_size: int) -> SearchResponse:
         """
         Perform full scan of movies to evaluate conditions.
         Filter conditions are evaluated using AND.
@@ -149,12 +160,12 @@ class SearchService:
         else:
             has_more = False
 
-        return {
-            "items": items,
-            "page": page,
-            "size": page_size,
-            "has_more": has_more
-        }
+        return SearchResponse(
+            items=items,
+            page=page,
+            size=page_size,
+            has_more=has_more
+        )
 
     @functools.lru_cache(maxsize=16384)
     def cached_find_movies(self, *args, **kwargs):
