@@ -95,7 +95,7 @@ class SearchService:
 
     @timeit
     def find_movies(self, title: str, year: int, cast: str, genre: str) -> Iterable[object]:
-        keys = {_ for _ in self.ids_by_title.keys() if "Hell" in _}
+        keys = {_ for _ in self.ids_by_title.keys() if title in _}
 
         ids_by_key = [self.ids_by_title[k] for k in keys]
         ids = {_ for sublist in ids_by_key for _ in sublist}
@@ -104,7 +104,7 @@ class SearchService:
 
     @timeit
     def find_movie_max_len(self, title: str, year: int, cast: str, genre: str) -> Iterable[object]:
-        keys_gen = (_ for _ in self.ids_by_title.keys() if "Hell" in _)
+        keys_gen = (_ for _ in self.ids_by_title.keys() if title in _)
         keys = list(itertools.islice(keys_gen, 10))
 
         ids_by_key = [self.ids_by_title[k] for k in keys]
