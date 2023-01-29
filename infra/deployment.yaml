@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-server
+  labels:
+    app: movie-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movie-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: movie-server
+    spec:
+      containers:
+        - env:
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_DEFAULT_REGION
+                  name: movies-env
+            - name: AWS_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_ENDPOINT_URL
+                  name: movies-env
+            - name: AWS_STORAGE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_STORAGE_BUCKET_NAME
+                  name: movies-env
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-secret
+                  key: AWS_ACCESS_KEY_ID
+                  optional: false
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-secret
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: false
+          image: 192.168.1.85:5000/movie_db_server:latest
+          name: movie-server
+          ports:
+            - containerPort: 80
+      imagePullSecrets:
+          - name: regsecret
+      restartPolicy: Always
