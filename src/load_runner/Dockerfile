@@ -14,4 +14,4 @@ RUN poetry install --without dev --no-root
 
 COPY . .
 
-CMD ["locust", "--web-port", "80", "--users", "50", "--spawn-rate", "2", "--host", "http://movie_server", "--autostart", "--run-time", "1m"]
+CMD locust --web-port 80 --users 50 --spawn-rate 2 --host "${MOVIE_SERVER_URL}" --autostart --run-time 1m
