@@ -1,0 +1,5 @@
+from os import environ
+
+
+AWS_INBOX_BUCKET_NAME = environ.get("AWS_INBOX_BUCKET_NAME")
+AWS_STORAGE_BUCKET_NAME = environ.get("AWS_STORAGE_BUCKET_NAME")

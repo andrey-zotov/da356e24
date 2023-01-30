@@ -3,6 +3,9 @@ ENV?=dev
 include .env.$(ENV)
 export
 
+test:
+	cd src/movie_indexer_job && python -m pytest -o log_cli=true
+
 local-start-server: conf
 	cd src/py_movie_db && uvicorn app.main:app --reload --port 8100 --no-use-colors
 

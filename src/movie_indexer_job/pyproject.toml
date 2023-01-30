@@ -1,16 +1,21 @@
 [tool.poetry]
-name = "load-runner"
+name = "movie-indexer-job"
 version = "0.1.0"
 description = ""
 authors = ["Andrey Zotov <andrey.n.zotov@gmail.com>"]
 readme = "README.md"
-packages = [{include = "load_runner"}]
+packages = [{include = "movie_indexer_job"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-locust = "^2.14.2"
-english-words = "^2.0.0"
+requests = "^2.28.2"
+boto3 = "^1.26.59"
+types-boto3 = "^1.0.2"
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+moto = "^4.1.1"
 
 [build-system]
 requires = ["poetry-core"]
