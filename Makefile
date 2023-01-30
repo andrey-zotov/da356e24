@@ -59,7 +59,7 @@ k8s-seed-delete:
 k8s-seed: k8s-seed-delete
 	kubectl create -f ./infra/seed-job.yaml
 
-k8s-create:
+k8s-create: k8s-seed
 	kubectl create -f ./infra/configmap.yaml
 	kubectl create -f ./infra/secrets.yaml
 	kubectl create -f ./infra/deployment.yaml
@@ -83,3 +83,13 @@ k8s-delete:
 	-kubectl delete cronjob ingest-cronjob
 	-kubectl delete secret aws-secret
 	-kubectl delete configmap movies-env
+
+k8s-stress-clean:
+	-helm uninstall locust
+	-kubectl delete configmap movie-locustfile
+
+k8s-stress:
+	-helm uninstall locust
+	-kubectl delete configmap movie-locustfile
+	kubectl create configmap movie-locustfile --from-file ./src/load_runner/main.py
+	helm upgrade --install locust deliveryhero/locust -f ./infra/config/locus-values.yaml

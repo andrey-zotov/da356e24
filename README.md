@@ -5,7 +5,7 @@ k8s
 
 .env
 
-`kubectl create secret generic regcred --from-file=.dockerconfigjson=/checkthispath/.docker/config.json --type=kubernetes.io/dockerconfigjson`
+`kubectl create secret generic regcred --from-file=.dockerconfigjson=/<checkthispath>/.docker/config.json --type=kubernetes.io/dockerconfigjson`
 
 localstack:
 `helm repo add localstack-repo https://helm.localstack.cloud`
@@ -34,20 +34,13 @@ LOCALSTACK_SERVICE_PORT
 Locust helm chart
 `helm repo add deliveryhero https://charts.deliveryhero.io/`
 ```
-helm install locust deliveryhero/locust -f ./infra/config/locus-values.yaml
+helm upgrade --install locust deliveryhero/locust -f ./infra/config/locus-values.yaml
 
-helm install locust deliveryhero/locust --set "ingress.enabled=true,ingress.hosts[0].paths[0].pathType=Prefix,ingress.hosts[0].host=localhost,ingress.hosts[0].paths[0].path=/locust"
-     \
-    --set ingress.annotations."nginx\.ingress\.kubernetes\.io/rewrite-target"=/\$2
+LOCUST_USERS=50
+LOCUST_SPAWN_RATE=2
+LOCUST_HOST=
 
-helm install my-release deliveryhero/locust --set ingress.enabled=true \
-    --set "ingress.hosts[0].host=localhost,ingress.hosts[0].paths[0].path=/locust(/|\$)(.*),ingress.hosts[0].paths[0].pathType=Prefix" \
-    --set ingress.annotations."kubernetes\.io/ingress.class"=nginx \
-    --set ingress.annotations."nginx\.ingress\.kubernetes\.io/rewrite-target"=/\$2
+MOVIE_SERVER_SERVICE_HOST
+MOVIE_SERVER_SERVICE_PORT
 
-    nginx.ingress.kubernetes.io/rewrite-target
-    
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    
-    --set alertmanager.ingress.annotations."alb\.ingress\.kubernetes\.io/scheme"=internet-facing
 ```
