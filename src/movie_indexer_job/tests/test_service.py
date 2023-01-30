@@ -14,6 +14,7 @@ def get_s3_client():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
+    os.environ["AWS_SHARED_CREDENTIALS_FILE"] = "dummy"
 
     client = boto3.client("s3", region_name="us-east-2")
     client.create_bucket(Bucket=AWS_INBOX_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
@@ -123,7 +124,7 @@ def test_can_read_inbox_entries():
 
     create_inbox_entries(s3)
 
-    entries = svc.read_inbox_entries()
+    entries = svc.read_inbox_entries(s3)
 
     assert len(entries) == 2
 
@@ -138,7 +139,7 @@ def test_can_read_main_db():
 
     create_main_db(s3)
 
-    db = svc.read_main_db()
+    db = svc.read_main_db(s3)
 
     assert len(db) == 3
 
@@ -152,7 +153,7 @@ def test_can_write_main_db():
 
     create_main_db(s3)
 
-    db = svc.read_main_db()
+    db = svc.read_main_db(s3)
     db.extend(db)
 
     svc.write_main_db(db, s3)
@@ -170,8 +171,8 @@ def test_can_update_main_db():
     create_main_db(s3)
     create_inbox_entries(s3)
 
-    db = svc.read_main_db()
-    entries = svc.read_inbox_entries()
+    db = svc.read_main_db(s3)
+    entries = svc.read_inbox_entries(s3)
 
     svc.update_main_db(db, entries)
     svc.write_main_db(db, s3)
@@ -192,7 +193,7 @@ def test_can_archive_inbox_entries():
 
     create_inbox_entries(s3)
 
-    entries = svc.read_inbox_entries()
+    entries = svc.read_inbox_entries(s3)
 
     svc.archive_inbox_entries(entries, s3)
 
