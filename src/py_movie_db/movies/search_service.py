@@ -81,7 +81,7 @@ class SearchService:
     def load_file(self) -> List[Movie]:
         s3 = boto3.client("s3", endpoint_url=AWS_ENDPOINT_URL)
 
-        bucket_name = environ.get(AWS_STORAGE_BUCKET_NAME)
+        bucket_name = AWS_STORAGE_BUCKET_NAME
 
         s3objects = s3.list_objects(Bucket=bucket_name)
         for item in s3objects.get('Contents'):
