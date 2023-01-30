@@ -3,8 +3,11 @@ ENV?=dev
 include .env.$(ENV)
 export
 
+seed:
+	cd src/movie_indexer_job && poetry run python seed.py
+
 test:
-	cd src/movie_indexer_job && python -m pytest -o log_cli=true
+	cd src/movie_indexer_job && poetry run python -m pytest -o log_cli=true
 
 local-start-server: conf
 	cd src/py_movie_db && uvicorn app.main:app --reload --port 8100 --no-use-colors
@@ -32,6 +35,9 @@ dc-build-movie-indexer: conf
 dc-start-infra: conf
 	-docker-compose -f local-infra.yml -p movie-dev-infra up
 
+dc-seed: conf dc-build-movie-indexer
+	docker-compose --profile movie_seed up
+
 dc-start: conf test dc-build-movie-server awslocal-create-bucket awslocal-upload-data
 	docker-compose --profile movie_server up
 
@@ -44,6 +50,8 @@ dc-ingest: conf dc-build-movie-indexer
 build: conf test
 	docker build -t $(DOCKER_REGISTRY)/movie_db_server:latest src/py_movie_db
 	docker push $(DOCKER_REGISTRY)/movie_db_server:latest
+	docker build -t $(DOCKER_REGISTRY)/movie_indexer:latest src/movie_indexer_job
+	docker push $(DOCKER_REGISTRY)/movie_indexer:latest
 
 k8s-delete:
 	-kubectl delete ingress movie-server-ingress

@@ -3,7 +3,7 @@ import os
 import boto3
 from moto import mock_s3
 
-from indexer.config import AWS_INBOX_BUCKET_NAME, AWS_STORAGE_BUCKET_NAME, AWS_ARCHIVE_BUCKET_NAME
+from indexer.config import AWS_REGION, AWS_INBOX_BUCKET_NAME, AWS_STORAGE_BUCKET_NAME, AWS_ARCHIVE_BUCKET_NAME
 import indexer.service as svc
 
 
@@ -13,13 +13,13 @@ def get_s3_client():
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
+    os.environ["AWS_DEFAULT_REGION"] = AWS_REGION
     os.environ["AWS_SHARED_CREDENTIALS_FILE"] = "dummy"
 
-    client = boto3.client("s3", region_name="us-east-2")
-    client.create_bucket(Bucket=AWS_INBOX_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
-    client.create_bucket(Bucket=AWS_STORAGE_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
-    client.create_bucket(Bucket=AWS_ARCHIVE_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
+    client = boto3.client("s3", region_name=AWS_REGION)
+    client.create_bucket(Bucket=AWS_INBOX_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": AWS_REGION})
+    client.create_bucket(Bucket=AWS_STORAGE_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": AWS_REGION})
+    client.create_bucket(Bucket=AWS_ARCHIVE_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": AWS_REGION})
 
     return client
 

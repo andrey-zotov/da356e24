@@ -14,6 +14,13 @@ services:
     profiles:
       - movie_server
 
+  movie_seed:
+    build: ./src/movie_indexer_job
+    env_file:
+      - ./.env.dev
+    profiles:
+      - movie_seed
+    command: python seed.py
 
   movie_indexer:
     build: ./src/movie_indexer_job
