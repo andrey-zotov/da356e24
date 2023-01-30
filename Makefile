@@ -3,23 +3,15 @@ ENV?=dev
 include .env.$(ENV)
 export
 
-awslocal-create-buckets: conf
-	-awslocal --endpoint-url=$(AWS_ENDPOINT_URL_LOCAL) s3api create-bucket --bucket $(AWS_INBOX_BUCKET_NAME) --create-bucket-configuration "{\"LocationConstraint\": \"$(AWS_DEFAULT_REGION)\"}"
-	-awslocal --endpoint-url=$(AWS_ENDPOINT_URL_LOCAL) s3api create-bucket --bucket $(AWS_STORAGE_BUCKET_NAME) --create-bucket-configuration "{\"LocationConstraint\": \"$(AWS_DEFAULT_REGION)\"}"
-	-awslocal --endpoint-url=$(AWS_ENDPOINT_URL_LOCAL) s3api create-bucket --bucket $(AWS_ARCHIVE_BUCKET_NAME) --create-bucket-configuration "{\"LocationConstraint\": \"$(AWS_DEFAULT_REGION)\"}"
-
-awslocal-seed-inbox: conf
-	awslocal --endpoint-url=$(AWS_ENDPOINT_URL_LOCAL) s3 cp ./src/movie_indexer_job/data/seed_data.json s3://$(AWS_INBOX_BUCKET_NAME)/db.json
-
-awslocal-seed-main-db: conf
-	awslocal --endpoint-url=$(AWS_ENDPOINT_URL_LOCAL) s3 cp ./src/movie_indexer_job/data/seed_data.json s3://$(AWS_STORAGE_BUCKET_NAME)/increment1.json
-
 test:
 	cd src/movie_indexer_job && poetry run python -m pytest -o log_cli=true
 	cd src/py_movie_db && poetry run python -m pytest -o log_cli=true
 
 local-seed:
 	cd src/movie_indexer_job && poetry run python seed.py
+
+local-ingest: conf
+	cd src/movie_indexer_job && poetry run python main.py
 
 local-start-server: conf
 	cd src/py_movie_db && uvicorn app.main:app --reload --port 8100 --no-use-colors
@@ -39,7 +31,7 @@ dc-start-infra: conf
 dc-seed: conf dc-build-movie-indexer
 	docker-compose --profile movie_seed up
 
-dc-start: conf test dc-build-movie-server awslocal-create-bucket awslocal-upload-data
+dc-start: conf test dc-build-movie-server
 	docker-compose --profile movie_server up
 
 dc-stress: conf dc-build-load-runner
@@ -90,6 +82,7 @@ k8s-stress-clean:
 	-kubectl delete configmap movie-locustfile
 
 k8s-stress:
+	helm repo add deliveryhero https://charts.deliveryhero.io/
 	-helm uninstall locust
 	-kubectl delete configmap movie-locustfile
 	kubectl create configmap movie-locustfile --from-file ./src/load_runner/main.py
