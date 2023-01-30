@@ -107,8 +107,9 @@ The internal performance counters in the API server demonstrate <2ms average res
    }
 }
 ```
-However on Docker Desktop on Windows WSL2, the client-reported response times are order of magnitude higher, see Locust screenshots 
-TBD
+However on Docker Desktop on Windows WSL2, the client-reported response times are order of magnitude higher.
+See the Locust screenshot: 
+![Locus chart](misc/locust-api-stress-windows.png)
 
 Most likely this is due to networking overhead of WSL2, this to be confirmed.
 
