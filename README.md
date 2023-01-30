@@ -83,7 +83,8 @@ The solution consists of:
 - `src/load_runner`: `locust` script and runner
 - `infra`: kubernetes workload configuration
 
-TBD diagram here
+![Locus chart](misc/diagram.png)
+
 
 ## Performance
 
