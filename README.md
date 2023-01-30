@@ -27,7 +27,8 @@ To have a scalable movie DB API service deployable to kubernetes.
   - Time to ingest data updates is not very important (up to 1 day is ok)
   - Movie matching key for ingestion will be combination of `title` and `year`
   - Records will be merged using last modified timestamp in the S3 bucket
-  - No deduplication is required 
+  - No deduplication of seed data is required
+  - Conflict resolution is out of scope
 - Only basic cloud resource configuration is required, buckets and names - e.g. IAM roles and policies, netowrks, S3, EKS configuration is out of scope
 - API or data updates authorization is out of scope of this exercise
 
