@@ -75,6 +75,8 @@ To increase iteration time and avoid dependency on third party (and avoiding clo
 
 
 ## Implementation
+
+### Components
 The solution consists of:
 - `src/py_movie_db`: API server
 - `src/movie_indexer_job`: Data ingestion job
@@ -83,9 +85,32 @@ The solution consists of:
 
 TBD diagram here
 
-## Notes on performance
+## Performance
 
+The internal performance counters in the API server demonstrate <2ms average response times, see `avg_request_time.http_search_request`:
+```
+{
+   "request_counts":{
+      "find_movies":357,
+      "cached_find_movies":5889,
+      "http_search_request/":5889
+   },
+   "elapsed_sum":{
+      "find_movies":0.8602577280835249,
+      "cached_find_movies":0.8970306365517899,
+      "http_search_request/":8.386440065834904
+   },
+   "avg_request_time":{
+      "find_movies":0.002409685512839005,
+      "cached_find_movies":0.00015232308312986754,
+      "http_search_request/":0.0014240855944701823
+   }
+}
+```
+However on Docker Desktop on Windows WSL2, the client-reported response times are order of magnitude higher, see Locust screenshots 
+TBD
 
+Most likely this is due to networking overhead of WSL2, this to be confirmed.
 
 
 ## Set up
