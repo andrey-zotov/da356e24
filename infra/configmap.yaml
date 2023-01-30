@@ -1,8 +1,9 @@
 apiVersion: v1
 data:
   AWS_DEFAULT_REGION: us-east-2
-  AWS_ENDPOINT_URL: http://192.168.1.85:4567
-  AWS_STORAGE_BUCKET_NAME: movie-stg
+  AWS_INBOX_BUCKET_NAME: movie-db-inbox
+  AWS_STORAGE_BUCKET_NAME: movie-db-store
+  AWS_ARCHIVE_BUCKET_NAME: movie-db-archive
 kind: ConfigMap
 metadata:
   name: movies-env

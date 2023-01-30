@@ -200,5 +200,5 @@ def test_can_archive_inbox_entries():
     archive_entries = s3.list_objects_v2(Bucket=AWS_ARCHIVE_BUCKET_NAME)['Contents']
     assert len(archive_entries) == 2
 
-    new_entries = svc.read_inbox_entries()
+    new_entries = svc.read_inbox_entries(s3)
     assert len(new_entries) == 0

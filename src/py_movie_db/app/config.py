@@ -1,6 +1,5 @@
 from os import environ
 
-# use localstack if available
 AWS_ENDPOINT_URL = (
     f"http://{environ.get('LOCALSTACK_SERVICE_HOST')}:{environ.get('LOCALSTACK_SERVICE_PORT')}" if environ.get('LOCALSTACK_SERVICE_HOST') else ""
 ) or environ.get("AWS_ENDPOINT_URL")

@@ -23,15 +23,20 @@ spec:
                 configMapKeyRef:
                   key: AWS_DEFAULT_REGION
                   name: movies-env
-            - name: AWS_ENDPOINT_URL
+            - name: AWS_INBOX_BUCKET_NAME
               valueFrom:
                 configMapKeyRef:
-                  key: AWS_ENDPOINT_URL
+                  key: AWS_INBOX_BUCKET_NAME
                   name: movies-env
             - name: AWS_STORAGE_BUCKET_NAME
               valueFrom:
                 configMapKeyRef:
                   key: AWS_STORAGE_BUCKET_NAME
+                  name: movies-env
+            - name: AWS_ARCHIVE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_ARCHIVE_BUCKET_NAME
                   name: movies-env
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
@@ -46,6 +51,7 @@ spec:
                   key: AWS_SECRET_ACCESS_KEY
                   optional: false
           image: 192.168.1.85:5000/movie_db_server:latest
+          imagePullPolicy: Always
           name: movie-server
           ports:
             - containerPort: 80

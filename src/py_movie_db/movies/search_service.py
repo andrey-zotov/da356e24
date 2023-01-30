@@ -5,6 +5,7 @@ from os import environ
 
 import boto3
 
+from app.config import AWS_ENDPOINT_URL, AWS_STORAGE_BUCKET_NAME
 from utils.perf_tools import measure_time_elapsed
 from dataclasses import dataclass
 import json
@@ -78,9 +79,9 @@ class SearchService:
 
     @measure_time_elapsed
     def load_file(self) -> List[Movie]:
-        s3 = boto3.client("s3", endpoint_url=environ.get("AWS_ENDPOINT_URL"))
+        s3 = boto3.client("s3", endpoint_url=AWS_ENDPOINT_URL)
 
-        bucket_name = environ.get("AWS_STORAGE_BUCKET_NAME")
+        bucket_name = environ.get(AWS_STORAGE_BUCKET_NAME)
 
         s3objects = s3.list_objects(Bucket=bucket_name)
         for item in s3objects.get('Contents'):
