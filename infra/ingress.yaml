@@ -8,8 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: kubernetes.docker.internal
-    http:
+  - http:
       paths:
       - path: /movie-db-api(/|$)(.*)
         pathType: Prefix

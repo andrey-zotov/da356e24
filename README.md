@@ -18,3 +18,6 @@ Save into .env
 
 `helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace`
 `kubectl --namespace ingress-nginx get services -o wide -w ingress-nginx-controller`
+
+`helm upgrade --install metrics-server metrics-server/metrics-server`
+`kubectl -n default patch deployment metrics-server --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]]'`
