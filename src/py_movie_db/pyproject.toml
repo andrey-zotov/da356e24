@@ -17,6 +17,7 @@ types-boto3 = "^1.0.2"
 [tool.poetry.group.dev.dependencies]
 awscli-local = "^0.20"
 awscli = "^1.27.58"
+pytest = "^7.2.1"
 
 [build-system]
 requires = ["poetry-core"]

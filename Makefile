@@ -16,6 +16,7 @@ awslocal-seed-main-db: conf
 
 test:
 	cd src/movie_indexer_job && poetry run python -m pytest -o log_cli=true
+	cd src/py_movie_db && poetry run python -m pytest -o log_cli=true
 
 local-seed:
 	cd src/movie_indexer_job && poetry run python seed.py

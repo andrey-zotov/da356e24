@@ -1,7 +1,6 @@
 import sys
 import functools
 import itertools
-from os import environ
 
 import boto3
 
@@ -66,20 +65,21 @@ class SearchService:
                 dct[sys.intern(k)] = v
         return dct
 
-    def __init__(self):
+    def __init__(self, s3=None):
         self.data_by_id: Dict[int, Movie] = {}
         self.ids_by_title: Dict[str, List[int]] = {}
         self.ids_by_year: Dict[int, List[int]] = {}  # remove
         self.ids_by_cast: Dict[str, List[int]] = {}
         self.ids_by_genre: Dict[str, List[int]] = {}  # remove
 
-        self.movies_list = self.load_file()
+        self.movies_list = self.load_file(s3)
         self.assign_ids()
         self.create_indices()
 
     @measure_time_elapsed
-    def load_file(self) -> List[Movie]:
-        s3 = boto3.client("s3", endpoint_url=AWS_ENDPOINT_URL)
+    def load_file(self, s3) -> List[Movie]:
+        if s3 is None:
+            s3 = boto3.client("s3", endpoint_url=AWS_ENDPOINT_URL)
 
         bucket_name = AWS_STORAGE_BUCKET_NAME
 
@@ -164,7 +164,8 @@ class SearchService:
                      and (year == 0 or year == item.year)
                      and (not cast or cast in item.cast)
                      and (not genre or genre in item.genres))
-        iterator = itertools.islice(generator, page*page_size, page_size+1)
+
+        iterator = itertools.islice(generator, page*page_size, page*page_size+page_size+1)
         items = list(iterator)
 
         # flag if we have more items
