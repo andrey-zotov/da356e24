@@ -1,3 +1,5 @@
+import logging
+
 from indexer.lock import IngestionLock
 import indexer.service as svc
 
@@ -14,16 +16,24 @@ def ingest_inbox():
     # lock
     with IngestionLock():
         # read S3 content
+        logging.info("Reading inbox entries...")
         entries = svc.read_inbox_entries()
+        logging.info("%s entries found", len(entries))
 
         # read main movie db
+        logging.info("Loading main db...")
         db = svc.read_main_db()
 
         # read each file and create/update movie in the main db
+        logging.info("Updating main db...")
         svc.update_main_db(db, entries)
 
         # write main movie db
+        logging.info("Saving main db...")
         svc.write_main_db(db)
+
+        # archive inbox entries
+        svc.archive_inbox_entries(entries)
 
 
 def main():
@@ -31,4 +41,7 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
+
     main()

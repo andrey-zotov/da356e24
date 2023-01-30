@@ -3,9 +3,8 @@ import os
 import boto3
 from moto import mock_s3
 
-from indexer.config import AWS_INBOX_BUCKET_NAME, AWS_STORAGE_BUCKET_NAME
+from indexer.config import AWS_INBOX_BUCKET_NAME, AWS_STORAGE_BUCKET_NAME, AWS_ARCHIVE_BUCKET_NAME
 import indexer.service as svc
-
 
 
 def get_s3_client():
@@ -19,6 +18,7 @@ def get_s3_client():
     client = boto3.client("s3", region_name="us-east-2")
     client.create_bucket(Bucket=AWS_INBOX_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
     client.create_bucket(Bucket=AWS_STORAGE_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
+    client.create_bucket(Bucket=AWS_ARCHIVE_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": "us-east-2"})
 
     return client
 
@@ -184,3 +184,20 @@ def test_can_update_main_db():
     assert "Tom Waits" in db[0]["cast"]
     assert db[1]["title"] == "Power of the Air"
     assert db[3]["title"] == "Hell Fest"
+
+
+@mock_s3
+def test_can_archive_inbox_entries():
+    s3 = get_s3_client()
+
+    create_inbox_entries(s3)
+
+    entries = svc.read_inbox_entries()
+
+    svc.archive_inbox_entries(entries, s3)
+
+    archive_entries = s3.list_objects_v2(Bucket=AWS_ARCHIVE_BUCKET_NAME)['Contents']
+    assert len(archive_entries) == 2
+
+    new_entries = svc.read_inbox_entries()
+    assert len(new_entries) == 0

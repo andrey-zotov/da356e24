@@ -1,5 +1,9 @@
 
 class IngestionLock:
+    """
+    TODO: Lock while ETL is running using Dynamodb
+    """
+
     def __init__(self):
         pass
 
