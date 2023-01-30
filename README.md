@@ -1,46 +1,163 @@
-Prerequisites:
-docker
-helm
-k8s
+# Movie DB API workshop
 
-.env
+## Goal
+To have a scalable movie DB API service deployable to kubernetes.
 
-`kubectl create secret generic regcred --from-file=.dockerconfigjson=/<checkthispath>/.docker/config.json --type=kubernetes.io/dockerconfigjson`
+## Constraints and assumtions
+- API service response time should be <5ms (assuming this is p95 response time, not average or maximum)
+- 24/7 availability with zero downtime
+- Movie record structure
+  - Title
+  - Year
+  - List of cast members
+  - List of genres
+- API 
+  - Data is queryable by any of the fields
+  - For clarity and simplicity, assuming the following:
+    - Filter conditions are to be combined using AND
+    - Title filter is a substring search (title should contain the queries substring)
+    - Year is exact match filter
+    - Cast and genre filters to accept exact match using IN (e.g. query on genre `Action` will include all movies having `Action` among its genres)
+    - Data should be paginated
+      - Number of total results is not required, only the flag whether we have more pages 
+- Data ingestion
+  - Seed database is available in `wikipedia-movie-data` repository
+  - Data volume is small and is going to fully fit in memory (3.4Mb)
+  - Data updates are going to be received into write-only S3 bucket in the same json format as the seed db
+  - Time to ingest data updates is not very important (up to 1 day is ok)
+  - Movie matching key for ingestion will be combination of `title` and `year`
+  - Records will be merged using last modified timestamp in the S3 bucket
+  - No deduplication is required 
+- Only basic cloud resource configuration is required, buckets and names - e.g. IAM roles and policies, netowrks, S3, EKS configuration is out of scope
+- API or data updates authorization is out of scope of this exercise
 
-localstack:
-`helm repo add localstack-repo https://helm.localstack.cloud`
-`helm upgrade --install localstack localstack-repo/localstack`
+
+## Technical design
+High avaiability requirements are going to be satisfied by k8s deployment with multiple replicas.
+
+We have two main activities to focus on - data ingestion and API serving.
+
+### Data ingeston
+Data updates are going to be delivered into write-only S3 bucket (write-only for senders; the bucket configuration is out of scope).
+Data ingestion process should be able to preprocess data updates and store them in the form suitable for API serving.
+As the lead time requirements for data ingestion are relaxed, no real-time updates are needed, we're going to run batch job on the regular basis.
+The output of the data ingestion is highly dependent on the format required by API.
+
+### Query API
+The query interface combines query predicates with variable selectivity.
+For example query by year will return hundreds of records, while query by exact movie name - only one.
+Predicates use and selectivity is not known in advance. 
+We could try to predict selectivity based on statistics and use it to select an order to combine predicates.
+We could also use combination of techniques like b-tree indices, bitmaps and hash joins to speed up the search.
+However, given the size of the data, the most efficient would be just plain search in memory.
+Due to the same reasons, there's no benefits in using off-the-shelf solutions:
+- With in-memory data store, like redis, we won't have 'contains' search, combining predicates will be a problem 
+- An RDBMS would solve query optimization, but it is going be slower due to perforamnce overheads due to need to support numerous configurations and flexibility
+- Full-text search engines, like ElasticSearch, would suffer from the same problems as RDBMS    
+Network overhead would erase all the gains of the above options, if any.
+So the most efficient option is a plan full scan over data in-memory of the API process.
+
+### Choice of data store
+Due to the reasons above, the API server can read full data snapshot from S3 on start and provide query API over it.
+The server pods can be restarted periodically on a rolling bases to reload data.
+
+### Choice of languages and framework
+For efficiency, a low-level language and framework would be the most adequate option.
+
+Python would not be normally a language of choice given the scalability requirements, but it is still chosen purely based on convenience.
+Fast API is chosen as the most lightweight REST API framework for Python.  
+
+### Cloud infrastructure
+To increase iteration time and avoid dependency on third party (and avoiding cloud API authorization hassles), `localstack` is going to be used to simulate S3.
+
+### Stress testing
+`Locust` is used to stress test client API queries and measure response time under load.  
 
 
-Do not do this: `helm upgrade --install localstack localstack-repo/localstack --set "ingress.enabled=true,ingress.hosts[0].host=localstack,ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix"`
-Host: `kubectl get nodes --namespace "default" -o jsonpath="{.items[0].status.addresses[0].address}"`
-Port: `kubectl get --namespace "default" -o jsonpath="{.spec.ports[0].nodePort}" services localstack`
-`kubectl get pods`
-`kubectl port-forward localstack-5bdddb7c8-gf9pv 31566:31566`
+## Implementation
+The solution consists of:
+- `src/py_movie_db`: API server
+- `src/movie_indexer_job`: Data ingestion job
+- `src/load_runner`: `locust` script and runner
+- `infra`: kubernetes workload configuration
 
-LOCALSTACK_SERVICE_HOST
-LOCALSTACK_SERVICE_PORT
+TBD diagram here
 
-`helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace`
-`kubectl --namespace ingress-nginx get services -o wide -w ingress-nginx-controller`
-
-
-`helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system`
-`kubectl -n kube-system patch deployment metrics-server --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]]'`
-
-`kubectl exec -it movie-server-57d9dddd59-72kvt -n default -- bash`
+## Notes on performance
 
 
-Locust helm chart
-`helm repo add deliveryhero https://charts.deliveryhero.io/`
-```
-helm upgrade --install locust deliveryhero/locust -f ./infra/config/locus-values.yaml
 
-LOCUST_USERS=50
-LOCUST_SPAWN_RATE=2
-LOCUST_HOST=
 
-MOVIE_SERVER_SERVICE_HOST
-MOVIE_SERVER_SERVICE_PORT
+## Set up
 
-```
+### Prerequisites
+- `docker-desktop` with `kubernetes` 
+- `helm`
+- `make`
+- To run k8s version:
+  - a private Docker repository, e.g. `docker run -d -p 5000:5000 --restart=always --name registry registry:2` 
+
+### Configuration
+- Clone the repository
+- Copy `.env.dist` to `.env.dev`
+- Only if you will run locally or in docker-compose, for k8s you can skip this step: 
+  - Change `AWS_ENDPOINT_URL`, `MOVIE_SERVER_URL`, `AWS_ENDPOINT_URL_LOCAL` to point to your local IP
+
+### Running in k8s
+- You might need to import docker registry credentials:
+  - `kubectl create secret generic regcred --from-file=.dockerconfigjson=/<path-to-your-home>/.docker/config.json --type=kubernetes.io/dockerconfigjson`
+- You might need to install nginx ingress in a fresh Docker Desktop install 
+  - `helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace`
+- You might want to install metrics server in a fresh Docker Desktop install 
+  - `helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system`
+  - `kubectl -n kube-system patch deployment metrics-server --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]]'`
+- Install `localstack` helm chart
+    ```
+    helm repo add localstack-repo https://helm.localstack.cloud
+    helm upgrade --install localstack localstack-repo/localstack
+    ```
+- Review `yaml` files in `infra` and set your local IP address where necessary
+- Build, tag and push docker images to your the docker registry
+  - `make build` 
+- Init S3 buckets and upload seed data
+  - `make k8s-seed`
+- To start API server and schedule ingestion cronjob:
+  - Run `make k8s-create`
+  - API server will be running on your ingress on http://localhost/movie-db-api/
+- To run stress test using `locust`:
+  - Run `make k8s-stress`
+  - Locus web server will be running on your ingress on http://localhost/locust/
+  - Enter your API server url, e.g. `http://localhost/movie-db-api`, number of users and users increment and watch the graphs
+- To cleanup, run:
+  ```
+  make k8s-delete
+  make k8s-seed-delete
+  make k8s-stress-clean
+  helm uninstall localstack
+  ```
+
+### Running using docker-compose
+- Start `localstack` and keep running in the background
+  - `make dc-start-infra`
+- Init S3 buckets and upload seed data
+  - `make dc-seed`
+- To run ingestion job:
+  - Run `make dc-ingest`
+- To start API server:
+  - Run `make dc-start`
+  - API server will be running on http://localhost:8101
+
+### Running locally
+- Install dependencies
+  - `cd src/movie_indexer_job && poetry install`
+  - `cd src/py_movie_db && poetry install`
+  - `cd src/load_runner && poetry install`
+- Start `localstack` container: `docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack`
+- Init S3 buckets and upload seed data
+  - `make local-seed`
+- To run ingestion job:
+  - Run `make local-ingest`
+- To start API server:
+  - Run `make local-start-server`
+  - API server will be running on http://localhost:8100
+

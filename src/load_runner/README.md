@@ -1,1 +1,0 @@
-Stress testing for movie db search service using locust
