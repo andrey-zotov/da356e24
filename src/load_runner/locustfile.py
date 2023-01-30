@@ -1,11 +1,11 @@
 import random
 
-from english_words import get_english_words_set
+# from english_words import get_english_words_set
 from locust import HttpUser, task
 
 
 class MovieDbApiUser(HttpUser):
-    movie_queries = list(get_english_words_set(['web2'], lower=True))
+    # movie_queries = list(get_english_words_set(['web2'], lower=True))
     movie_frequent_queries = ["book", "dawn", "day", "fate", "word"]
 
     @task
