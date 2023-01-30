@@ -13,7 +13,6 @@ from typing import Iterable, List, Dict, Set, Optional
 
 @dataclass
 class Movie:
-    id: Optional[int]
     title: str
     title_normalized: str
     year: int
@@ -27,7 +26,6 @@ class Movie:
     @staticmethod
     def from_json_dict(item: Dict):
         return Movie(
-            id=None,
             title=item["title"],
             title_normalized=Movie.normalize_title(item["title"]),
             year=item["year"],
@@ -66,15 +64,7 @@ class SearchService:
         return dct
 
     def __init__(self, s3=None):
-        self.data_by_id: Dict[int, Movie] = {}
-        self.ids_by_title: Dict[str, List[int]] = {}
-        self.ids_by_year: Dict[int, List[int]] = {}  # remove
-        self.ids_by_cast: Dict[str, List[int]] = {}
-        self.ids_by_genre: Dict[str, List[int]] = {}  # remove
-
         self.movies_list = self.load_file(s3)
-        self.assign_ids()
-        self.create_indices()
 
     @measure_time_elapsed
     def load_file(self, s3) -> List[Movie]:
@@ -92,50 +82,6 @@ class SearchService:
             return [Movie.from_json_dict(_) for _ in json_data]
 
         raise Exception("Unable to read data from S3")
-
-    def assign_ids(self):
-        for i, item in enumerate(self.movies_list):
-            item.id = i
-
-    @measure_time_elapsed
-    def create_indices(self):
-
-        for item in self.movies_list:
-            id = item.id
-            self.data_by_id[id] = item
-
-            title = item.title
-            if title in self.ids_by_title:
-                self.ids_by_title[title].append(id)
-            else:
-                self.ids_by_title[title] = [id]
-
-            year = item.year
-            if year in self.ids_by_year:
-                self.ids_by_year[year].append(id)
-            else:
-                self.ids_by_year[year] = [id]
-
-            for cast in item.cast:
-                if cast in self.ids_by_cast:
-                    self.ids_by_cast[cast].append(id)
-                else:
-                    self.ids_by_cast[cast] = [id]
-
-            for genre in item.genres:
-                if genre in self.ids_by_genre:
-                    self.ids_by_genre[genre].append(id)
-                else:
-                    self.ids_by_genre[genre] = [id]
-
-    @measure_time_elapsed
-    def find_movies_x(self, title: str, year: int, cast: str, genre: str, page: int, page_size: int) -> Iterable[Movie]:
-        keys = {_ for _ in self.ids_by_title.keys() if title in _}
-
-        ids_by_key = [self.ids_by_title[k] for k in keys]
-        ids = {_ for sublist in ids_by_key for _ in sublist}
-        res = [self.data_by_id[k] for k in ids]
-        return res
 
     @measure_time_elapsed
     def find_movies(self, title_contains: str, year: int, cast: str, genre: str, page: int, page_size: int) -> SearchResponse:
