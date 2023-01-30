@@ -6,3 +6,7 @@ ingress:
   hosts:
     - path: /locust(/|$)(.*)
       pathType: Prefix
+loadtest:
+  name: movie-loadtest
+  locust_host: http://192.168.1.85/movie-db-api
+  locust_locustfile_configmap: movie-locustfile
