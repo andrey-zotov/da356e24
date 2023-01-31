@@ -58,6 +58,8 @@ Due to the same reasons, there's no benefits in using off-the-shelf solutions:
 Network overhead would erase all the gains of the above options, if any.
 So the most efficient option is a plan full scan over data in-memory of the API process.
 
+On top of that, a query results caching can help to reduce the load further. 
+
 ### Choice of data store
 Due to the reasons above, the API server can read full data snapshot from S3 on start and provide query API over it.
 The server pods can be restarted periodically on a rolling bases to reload data.
@@ -67,6 +69,8 @@ For efficiency, a low-level language and framework would be the most adequate op
 
 Python would not be normally a language of choice given the scalability requirements, but it is still chosen purely based on convenience.
 Fast API is chosen as the most lightweight REST API framework for Python.  
+
+itertools lru_cache is used to cache search results.
 
 ### Cloud infrastructure
 To increase iteration time and avoid dependency on third party (and avoiding cloud API authorization hassles), `localstack` is going to be used to simulate S3.

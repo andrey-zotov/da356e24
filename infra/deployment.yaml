@@ -55,6 +55,21 @@ spec:
           name: movie-server
           ports:
             - containerPort: 80
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /health/ready
+              port: 80
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /health/alive
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 5
       imagePullSecrets:
           - name: regsecret
       restartPolicy: Always

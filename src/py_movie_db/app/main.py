@@ -1,12 +1,21 @@
 import time
-from fastapi import FastAPI, Request
+from typing import Optional
+
+from fastapi import FastAPI, Request, HTTPException
+
 
 from movies.search_service import SearchService, SearchResponse
 from utils.perf_tools import PerfCounters, perf_counters
 
 app = FastAPI()
 
-search_service = SearchService()
+search_service: Optional[SearchService] = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    global search_service
+    search_service = SearchService()
 
 
 @app.get("/", response_model=SearchResponse)
@@ -21,9 +30,47 @@ async def search(title_contains: str = "", year: int = 0, cast: str = "", genre:
     - **genre**: filter movies which has the genre (full genre name is expected); ignored if empty
     """
 
+    if search_service is None:
+        raise HTTPException(status_code=500, detail="Service is starting")
+
     movies = search_service.cached_find_movies(title_contains=title_contains, year=year, cast=cast, genre=genre, page=page, page_size=page_size)
 
     return movies
+
+
+@app.get("/health/ready")
+async def get_is_ready():
+    """
+    Readiness probe for k8s
+    Returns HTTP 200 if service is initialized and HTTP 500 otherwise
+    """
+
+    if search_service is None:
+        raise HTTPException(status_code=500, detail="Service is starting")
+
+    return "{ok: true}"
+
+
+@app.get("/health/alive")
+async def get_is_alive():
+    """
+    Liveliness probe for k8s
+    Returns HTTP 200 if service is functioning and HTTP 500 otherwise
+    """
+
+    # report OK if still loading
+    if search_service is None:
+        return "{ok: true}"
+
+    try:
+        movies = search_service.cached_find_movies(title_contains="", year=0, cast="", genre="", page=0, page_size=1)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Service error: " + repr(e))
+
+    if len(movies.items) == 0:
+        raise HTTPException(status_code=500, detail="Service is malfunctioning (no results)")
+
+    return "{ok: true}"
 
 
 @app.get("/perf_counters", response_model=PerfCounters)
