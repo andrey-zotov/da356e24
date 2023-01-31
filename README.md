@@ -96,9 +96,9 @@ The api accepts queries in search parameters in the root url:
 - `page_size`: page size
 
 Examples:
-- `http://localhost/?title_contains=story`
-- `http://localhost/?year=2000`
-- `http://localhost/?title_contains=the&year=2000&genre=Comedy`
+- `http://<yourhostname>/?title_contains=story`
+- `http://<yourhostname>/?year=2000`
+- `http://<yourhostname>/?title_contains=the&year=2000&genre=Comedy`
 
 
 ## Performance
@@ -169,11 +169,11 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
   - `make k8s-seed`
 - To start API server and schedule ingestion cronjob:
   - Run `make k8s-create`
-  - API server will be running on your ingress on http://localhost/movie-db-api/
+  - API server will be running on your ingress on http://<yourhostname>/movie-db-api/
 - To run stress test using `locust`:
   - Run `make k8s-stress`
-  - Locus web server will be running on your ingress on http://localhost/locust/
-  - Enter your API server url, e.g. `http://localhost/movie-db-api`, number of users and users increment and watch the graphs
+  - Locus web server will be running on your ingress on http://<yourhostname>/locust/
+  - Enter your API server url, e.g. `http://<yourhostname>/movie-db-api`, number of users and users increment and watch the graphs
 - To cleanup, run:
   ```
   make k8s-delete

@@ -50,11 +50,13 @@ k8s-seed-delete:
 	-kubectl delete job seed-db
 
 k8s-seed: k8s-seed-delete
+	-kubectl create -f ./infra/configmap.yaml
+	-kubectl create -f ./infra/secrets.yaml
+	kubectl replace -f ./infra/configmap.yaml
+	kubectl replace -f ./infra/secrets.yaml
 	kubectl create -f ./infra/seed-job.yaml
 
 k8s-create: k8s-seed
-	kubectl create -f ./infra/configmap.yaml
-	kubectl create -f ./infra/secrets.yaml
 	kubectl create -f ./infra/deployment.yaml
 	kubectl create -f ./infra/service.yaml
 	kubectl create -f ./infra/ingress.yaml
