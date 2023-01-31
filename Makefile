@@ -61,6 +61,7 @@ k8s-create: k8s-seed
 	kubectl create -f ./infra/service.yaml
 	kubectl create -f ./infra/ingress.yaml
 	kubectl create -f ./infra/ingest-cronjob.yaml
+	kubectl create -f ./infra/autoscaling.yaml
 
 k8s-replace:
 	kubectl replace -f ./infra/ingest-cronjob.yaml
@@ -69,8 +70,10 @@ k8s-replace:
 	kubectl replace -f ./infra/deployment.yaml
 	kubectl replace -f ./infra/service.yaml
 	kubectl replace -f ./infra/ingress.yaml
+	kubectl replace -f ./infra/autoscaling.yaml
 
 k8s-delete:
+	-kubectl delete hpa movie-server-hpa
 	-kubectl delete ingress movie-server-ingress
 	-kubectl delete service movie-server
 	-kubectl delete deploy movie-server
