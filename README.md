@@ -3,7 +3,7 @@
 ## Goal
 To have a scalable movie DB API service deployable to kubernetes.
 
-## Constraints and assumtions
+## Constraints and assumptions
 - API service response time should be <5ms (assuming this is p95 response time, not average or maximum)
 - 24/7 availability with zero downtime
 - Movie record structure
@@ -15,7 +15,7 @@ To have a scalable movie DB API service deployable to kubernetes.
   - Data is queryable by any of the fields
   - For clarity and simplicity, assuming the following:
     - Filter conditions are to be combined using AND
-    - Title filter is a substring search (title should contain the queries substring)
+    - Title filter is a substring search (title should contain the queried substring)
     - Year is exact match filter
     - Cast and genre filters to accept exact match using IN (e.g. query on genre `Action` will include all movies having `Action` among its genres)
     - Data should be paginated
@@ -86,6 +86,20 @@ The solution consists of:
 
 ![Locus chart](misc/diagram.png)
 
+### Query API
+The api accepts queries in search parameters in the root url:
+- `title_contains`: substring to search in the movie title
+- `year`: year of the movie
+- `cast`: exact name of cast member
+- `genre`: exact genre
+- `page`: page number
+- `page_size`: page size
+
+Examples:
+- `http://localhost/?title_contains=story`
+- `http://localhost/?year=2000`
+- `http://localhost/?title_contains=the&year=2000&genre=Comedy`
+
 
 ## Performance
 
@@ -123,8 +137,9 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
 - `helm`
 - `make`
 - To run k8s version:
-  - a private Docker repository, e.g. `docker run -d -p 5000:5000 --restart=always --name registry registry:2` 
-
+  - A private Docker registry, you can start one in docker:
+    - `docker run -d -p 5000:5000 --restart=always --name registry registry:2`
+    - Allow insecure registry in docker daemon config `~/.docker/daemon.json`: `"insecure-registries":["<yourhostname-or-IP>:5000"]`
 ### Configuration
 - Clone the repository
 - Copy `.env.dist` to `.env.dev`
@@ -137,13 +152,16 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
 - You might need to install nginx ingress in a fresh Docker Desktop install 
   - `helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace`
 - You might want to install metrics server in a fresh Docker Desktop install 
-  - `helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system`
-  - `kubectl -n kube-system patch deployment metrics-server --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]]'`
+  ```
+  helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+  helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system
+  kubectl -n kube-system patch deployment metrics-server --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]]'
+  ```
 - Install `localstack` helm chart
-    ```
-    helm repo add localstack-repo https://helm.localstack.cloud
-    helm upgrade --install localstack localstack-repo/localstack
-    ```
+  ```
+  helm repo add localstack-repo https://helm.localstack.cloud
+  helm upgrade --install localstack localstack-repo/localstack
+  ```
 - Review `yaml` files in `infra` and set your local IP address where necessary
 - Build, tag and push docker images to your the docker registry
   - `make build` 
@@ -177,9 +195,9 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
 
 ### Running locally
 - Install dependencies
-  - `cd src/movie_indexer_job && poetry install`
-  - `cd src/py_movie_db && poetry install`
-  - `cd src/load_runner && poetry install`
+  - `cd src/movie_indexer_job && poetry install --no-root`
+  - `cd src/py_movie_db && poetry install --no-root`
+  - `cd src/load_runner && poetry install --no-root`
 - Start `localstack` container: `docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack`
 - Init S3 buckets and upload seed data
   - `make local-seed`
