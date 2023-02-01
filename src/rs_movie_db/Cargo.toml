@@ -1,0 +1,44 @@
+[package]
+name = "rs_movie_db"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "rs-movie-db"
+path = "main.rs"
+
+[dependencies]
+aws-config = { git = "https://github.com/awslabs/aws-sdk-rust", branch = "main" }
+aws-endpoint = { git = "https://github.com/awslabs/aws-sdk-rust", branch = "main" }
+aws-sdk-s3 = { git = "https://github.com/awslabs/aws-sdk-rust", branch = "main" }
+rocket = { version = "0.5.0-rc.2", features = ["json"] }
+rocket_dyn_templates = { version = "0.1.0-rc.2", features = ["tera"] }
+tokio = { version = "1.6.1", features = ["fs", "io-std", "io-util", "rt-multi-thread", "sync", "signal", "macros"] }
+tokio-util = { version = "0.7", default-features = false, features = ["io"] }
+serde_json = { version = "1.0.26" }
+futures = { version = "0.3.0", default-features = false, features = ["std"] }
+yansi = "0.5"
+log = { version = "0.4", features = ["std"] }
+num_cpus = "1.0"
+time = { version = "0.3", features = ["macros", "parsing"] }
+memchr = "2"
+binascii = "0.1"
+atty = "0.2"
+ref-cast = "1.0"
+atomic = "0.5"
+parking_lot = "0.12"
+ubyte = {version = "0.10", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+figment = { version = "0.10.6", features = ["toml", "env"] }
+rand = "0.8"
+either = "1"
+pin-project-lite = "0.2"
+indexmap = { version = "1.0", features = ["serde-1", "std"] }
+tempfile = "3"
+async-trait = "0.1.43"
+async-stream = "0.3.2"
+multer = { version = "2", features = ["tokio-io"] }
+tokio-stream = { version = "0.1.6", features = ["signal", "time"] }
+state = "0.5.1"
+rmp-serde = "1.1.1"

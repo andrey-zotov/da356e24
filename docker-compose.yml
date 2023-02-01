@@ -14,6 +14,17 @@ services:
     profiles:
       - movie_server
 
+  rs_movie_server:
+    build: ./src/rs_movie_db
+    env_file:
+      - ./.env.dev
+    ports:
+      - 8000:8000
+    networks:
+      - movie-dev-net
+    profiles:
+      - rs_movie_server
+
   movie_seed:
     build: ./src/movie_indexer_job
     env_file:

@@ -9,6 +9,13 @@ spec:
   rules:
   - http:
       paths:
+      - path: /movie-db-api-rs(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: movie-server-rs
+            port:
+              name: http
       - path: /movie-db-api(/|$)(.*)
         pathType: Prefix
         backend:

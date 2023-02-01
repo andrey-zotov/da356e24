@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-server-rs
+  labels:
+    app: movie-server-rs
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: movie-server-rs
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: movie-server-rs
+    spec:
+      containers:
+        - env:
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_DEFAULT_REGION
+                  name: movies-env
+            - name: AWS_INBOX_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_INBOX_BUCKET_NAME
+                  name: movies-env
+            - name: AWS_STORAGE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_STORAGE_BUCKET_NAME
+                  name: movies-env
+            - name: AWS_ARCHIVE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_ARCHIVE_BUCKET_NAME
+                  name: movies-env
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-secret
+                  key: AWS_ACCESS_KEY_ID
+                  optional: false
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-secret
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: false
+            - name: ROCKET_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  key: ROCKET_ADDRESS
+                  name: movies-env
+            - name: ROCKET_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: ROCKET_PORT
+                  name: movies-env
+            - name: ROCKET_WORKERS
+              valueFrom:
+                configMapKeyRef:
+                  key: ROCKET_WORKERS
+                  name: movies-env
+            - name: ROCKET_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  key: ROCKET_LOG_LEVEL
+                  name: movies-env
+          image: 192.168.1.85:5000/rs_movie_db_server:latest
+          imagePullPolicy: Always
+          name: movie-server-rs
+          ports:
+            - containerPort: 80
+      imagePullSecrets:
+          - name: regsecret
+      restartPolicy: Always
