@@ -114,6 +114,34 @@ Examples:
 - `http://<yourhostname>/?title_contains=the&year=2000&genre=Comedy`
 
 
+### Python service
+Python version of the service is created using Fast API framework.
+It's relatively well optimized, utilizing list comprehension and itertools, string interning etc.
+It utilizes lru result cache.
+It also provides dedicated liveness and health check endpoints.
+
+### Rust service
+Rust version of the service is created using rocket.js framework.
+It does not do caching of results atm.
+
+### kubernetes workload
+Kubernetes resources consist of:
+- Python-based API service
+- HPA autoscaling configuration for Python-based API service 
+- Rust version of API service
+- Seed job to seed data into S3 bucket
+- Cronjob to ingest data updates from S3 inbox bucket
+- Configmap, ingress configuration, dummy secrets for aws client
+
+Python API service will increase number of replicas depending on CPU usage.
+
+
+### Helm chart
+A basic Helm chart is provided to deploy the workload.
+It has dependencies on `localstack` and private registry, it's implied this already exists in the environment.
+See Set up section for deployment details.
+
+
 ## Performance
 
 The internal performance counters in the API server demonstrate <2ms average response times (available under `http://<yourhostname>/perf_counters`), see `avg_request_time.http_search_request`:
