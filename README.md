@@ -29,17 +29,15 @@ To have a scalable movie DB API service deployable to kubernetes.
   - Records will be merged using last modified timestamp in the S3 bucket
   - No deduplication of seed data is required
   - Conflict resolution is out of scope
-- Only basic cloud resource configuration is required, buckets and names - e.g. IAM roles and policies, netowrks, S3, EKS configuration is out of scope
-- API or data updates authorization is out of scope of this exercise
+- Only basic cloud resource configuration is required, buckets and names - e.g. IAM roles and policies, networks, S3 bucket configuration, EKS configuration is out of scope
+- API or data updates authentication and authorization are out of scope of this exercise
 
 
 ## Technical design
-High avaiability requirements are going to be satisfied by k8s deployment with multiple replicas.
-
 We have two main activities to focus on - data ingestion and API serving.
 
 ### Data ingeston
-Data updates are going to be delivered into write-only S3 bucket (write-only for senders; the bucket configuration is out of scope).
+Data updates are going to be delivered into write-only S3 bucket (write-only for senders).
 Data ingestion process should be able to preprocess data updates and store them in the form suitable for API serving.
 As the lead time requirements for data ingestion are relaxed, no real-time updates are needed, we're going to run batch job on the regular basis.
 The output of the data ingestion is highly dependent on the format required by API.
@@ -53,12 +51,17 @@ We could also use combination of techniques like b-tree indices, bitmaps and has
 However, given the size of the data, the most efficient would be just plain search in memory.
 Due to the same reasons, there's no benefits in using off-the-shelf solutions:
 - With in-memory data store, like redis, we won't have 'contains' search, combining predicates will be a problem 
-- An RDBMS would solve query optimization, but it is going be slower due to perforamnce overheads due to need to support numerous configurations and flexibility
+- An RDBMS would solve query optimization, but it is going be slower due to performance overheads due to the need of RDBMS to support numerous configurations and flexibility
 - Full-text search engines, like ElasticSearch, would suffer from the same problems as RDBMS    
+
 Network overhead would erase all the gains of the above options, if any.
 So the most efficient option is a plan full scan over data in-memory of the API process.
+A query results caching can help to reduce the load further.
+This can be implemented directly in the API process.
 
-On top of that, a query results caching can help to reduce the load further. 
+API server can read full data snapshot from S3 on start.
+
+High avaiability requirements are going to be satisfied by k8s deployment with multiple replicas.
 
 ### Choice of data store
 Due to the reasons above, the API server can read full data snapshot from S3 on start and provide query API over it.
@@ -70,7 +73,7 @@ Python would not be normally a language of choice given the scalability requirem
 Fast API is chosen as the most lightweight REST API framework for Python.  
 itertools lru_cache is used to cache search results.
 
-Additionally, a version of API service has been written in Rust using Rocket.rs framework. 
+Additionally, a version of API service has been written in Rust using Rocket.rs framework to optimize data serving further.
 
 ### Cloud infrastructure
 To increase iteration time and avoid dependency on third party (and avoiding cloud API authorization hassles), `localstack` is going to be used to simulate S3.
@@ -87,12 +90,14 @@ A basic Helm chart is created to simplify deployment of the service in the k8s c
 
 ### Components
 The solution consists of:
-- `src/py_movie_db`: API server
+- `src/py_movie_db`: Python version of API server
+- `src/rs_movie_db`: Rust version of API server 
 - `src/movie_indexer_job`: Data ingestion job
 - `src/load_runner`: `locust` script and runner
-- `infra`: kubernetes workload configuration
+- `src/movie-db-chart`: Helm chart
+- `infra`: kubernetes workload and locust configuration
 
-![Locus chart](misc/diagram.png)
+![Diagram](misc/diagram.png)
 
 ### Query API
 The api accepts queries in search parameters in the root url:
@@ -132,11 +137,13 @@ The internal performance counters in the API server demonstrate <2ms average res
 }
 ```
 However on Docker Desktop on Windows WSL2, the client-reported response times are order of magnitude higher.
-See the Locust screenshot: 
-![Locus chart](misc/locust-api-stress-windows.png)
-
+See the Locust screenshot for Python service:
+![Locust screenshort - Python Server](misc/locust-api-stress-windows.png)
 Most likely this is due to networking overhead of WSL2 and non-production kubernetes configuration.
-The Rust version of the service, although provides slightly higher throughput and low response times, suffers from the same networking overheads.
+
+The Rust version of the service, although provides slightly higher throughput and low response times, suffers from the same networking overheads:
+![Locust screenshort - Rest Server](misc/locust-api-stress-rs-windows.png)
+
 
 
 ## Set up
