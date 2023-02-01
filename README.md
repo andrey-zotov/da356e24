@@ -66,17 +66,21 @@ The server pods can be restarted periodically on a rolling bases to reload data.
 
 ### Choice of languages and framework
 For efficiency, a low-level language and framework would be the most adequate option.
-
 Python would not be normally a language of choice given the scalability requirements, but it is still chosen purely based on convenience.
 Fast API is chosen as the most lightweight REST API framework for Python.  
-
 itertools lru_cache is used to cache search results.
+
+Additionally, a version of API service has been written in Rust using Rocket.rs framework. 
 
 ### Cloud infrastructure
 To increase iteration time and avoid dependency on third party (and avoiding cloud API authorization hassles), `localstack` is going to be used to simulate S3.
 
+### Provisioning within kubernetes cluster
+A basic Helm chart is created to simplify deployment of the service in the k8s cluster. 
+
 ### Stress testing
 `Locust` is used to stress test client API queries and measure response time under load.  
+
 
 
 ## Implementation
@@ -107,7 +111,7 @@ Examples:
 
 ## Performance
 
-The internal performance counters in the API server demonstrate <2ms average response times, see `avg_request_time.http_search_request`:
+The internal performance counters in the API server demonstrate <2ms average response times (available under `http://<yourhostname>/perf_counters`), see `avg_request_time.http_search_request`:
 ```
 {
    "request_counts":{
@@ -131,7 +135,8 @@ However on Docker Desktop on Windows WSL2, the client-reported response times ar
 See the Locust screenshot: 
 ![Locus chart](misc/locust-api-stress-windows.png)
 
-Most likely this is due to networking overhead of WSL2, this to be confirmed.
+Most likely this is due to networking overhead of WSL2 and non-production kubernetes configuration.
+The Rust version of the service, although provides slightly higher throughput and low response times, suffers from the same networking overheads.
 
 
 ## Set up
@@ -144,13 +149,14 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
   - A private Docker registry, you can start one in docker:
     - `docker run -d -p 5000:5000 --restart=always --name registry registry:2`
     - Allow insecure registry in docker daemon config `~/.docker/daemon.json`: `"insecure-registries":["<yourhostname-or-IP>:5000"]`
+
 ### Configuration
 - Clone the repository
 - Copy `.env.dist` to `.env.dev`
 - Only if you will run locally or in docker-compose, for k8s you can skip this step: 
   - Change `AWS_ENDPOINT_URL`, `MOVIE_SERVER_URL` to point to your local IP
 
-### Running in k8s
+### Running in k8s - Prerequisites
 - You might need to import docker registry credentials:
   - `kubectl create secret generic regcred --from-file=.dockerconfigjson=/<path-to-your-home>/.docker/config.json --type=kubernetes.io/dockerconfigjson`
 - You might need to install nginx ingress in a fresh Docker Desktop install 
@@ -166,9 +172,23 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
   helm repo add localstack-repo https://helm.localstack.cloud
   helm upgrade --install localstack localstack-repo/localstack
   ```
-- Review `yaml` files in `infra` and set your local IP address where necessary
 - Build, tag and push docker images to your the docker registry
   - `make build` 
+- To cleanup, run:
+  ```
+  helm uninstall localstack
+  ```
+
+
+### Running in k8s using helm chart
+- Install helm chart
+  - `make k8s-helm-install`
+- Uninstall helm chart
+  - `make k8s-helm-uninstall`
+
+
+### Running in k8s using yaml files directly
+- Review `yaml` files in `infra` and set your local IP address where necessary
 - Init S3 buckets and upload seed data
   - `make k8s-seed`
 - To start API server and schedule ingestion cronjob:
@@ -183,7 +203,6 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
   make k8s-delete
   make k8s-seed-delete
   make k8s-stress-clean
-  helm uninstall localstack
   ```
 
 ### Running using docker-compose
@@ -193,9 +212,12 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
   - `make dc-seed`
 - To run ingestion job:
   - Run `make dc-ingest`
-- To start API server:
+- To start Python API server:
   - Run `make dc-start`
   - API server will be running on http://localhost:8101
+- Alternatively, to start Rust API server:
+  - Run `make dc-start-rs`
+  - API server will be running on http://localhost:8000
 
 ### Running locally
 - Install dependencies
@@ -211,3 +233,7 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
   - Run `make local-start-server`
   - API server will be running on http://localhost:8100
 
+### Compiling Rust service locally
+- Prerequisites: Rust with cargo
+- To compile and start the service:
+  - `make local-start-rs-server`
