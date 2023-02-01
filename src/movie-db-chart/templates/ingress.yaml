@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "movie-db-chart.fullname" . }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /movie-db-api-rs(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "movie-db-chart.fullname" . }}-rs
+            port:
+              name: http
+      - path: /movie-db-api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "movie-db-chart.fullname" . }}
+            port:
+              name: http

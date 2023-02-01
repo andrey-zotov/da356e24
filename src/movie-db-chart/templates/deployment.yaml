@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "movie-db-chart.fullname" . }}-movie-server
+  labels:
+    {{- include "movie-db-chart.labels" . | nindent 4 }}
+    app: {{ include "movie-db-chart.fullname" . }}-movie-server
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "movie-db-chart.selectorLabels" . | nindent 6 }}
+      app: {{ include "movie-db-chart.fullname" . }}-movie-server
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "movie-db-chart.selectorLabels" . | nindent 8 }}
+        app: {{ include "movie-db-chart.fullname" . }}-movie-server
+    spec:
+      serviceAccountName: {{ include "movie-db-chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - env:
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_DEFAULT_REGION
+                  name: {{ include "movie-db-chart.fullname" . }}-movies-env
+            - name: AWS_INBOX_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_INBOX_BUCKET_NAME
+                  name: {{ include "movie-db-chart.fullname" . }}-movies-env
+            - name: AWS_STORAGE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_STORAGE_BUCKET_NAME
+                  name: {{ include "movie-db-chart.fullname" . }}-movies-env
+            - name: AWS_ARCHIVE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: AWS_ARCHIVE_BUCKET_NAME
+                  name: {{ include "movie-db-chart.fullname" . }}-movies-env
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "movie-db-chart.fullname" . }}-aws-secret
+                  key: AWS_ACCESS_KEY_ID
+                  optional: false
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "movie-db-chart.fullname" . }}-aws-secret
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: false
+          image: "{{ .Values.image.repository }}/movie_db_server:{{ default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          name: {{ include "movie-db-chart.fullname" . }}-movie-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /health/alive
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /health/ready
+              port: 80
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests:
+              memory: "120Mi"
+              cpu: "500m"
+            limits:
+              memory: "200Mi"
+              cpu: "1"
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Always

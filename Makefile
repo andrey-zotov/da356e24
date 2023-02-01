@@ -109,3 +109,10 @@ k8s-stress:
 	-kubectl delete configmap movie-locustfile
 	kubectl create configmap movie-locustfile --from-file ./src/load_runner/main.py
 	helm upgrade --install locust deliveryhero/locust -f ./infra/config/locus-values.yaml
+
+k8s-helm-install:
+	helm upgrade --install movie-db src/movie-db-chart
+#--set image.repository=$(DOCKER_REGISTRY)
+
+k8s-helm-uninstall:
+	helm uninstall movie-db

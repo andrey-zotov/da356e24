@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "movie-db-chart.fullname" . }}-seed-job
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+          - name: AWS_DEFAULT_REGION
+            valueFrom:
+              configMapKeyRef:
+                key: AWS_DEFAULT_REGION
+                name: {{ include "movie-db-chart.fullname" . }}-movies-env
+          - name: AWS_INBOX_BUCKET_NAME
+            valueFrom:
+              configMapKeyRef:
+                key: AWS_INBOX_BUCKET_NAME
+                name: {{ include "movie-db-chart.fullname" . }}-movies-env
+          - name: AWS_STORAGE_BUCKET_NAME
+            valueFrom:
+              configMapKeyRef:
+                key: AWS_STORAGE_BUCKET_NAME
+                name: {{ include "movie-db-chart.fullname" . }}-movies-env
+          - name: AWS_ARCHIVE_BUCKET_NAME
+            valueFrom:
+              configMapKeyRef:
+                key: AWS_ARCHIVE_BUCKET_NAME
+                name: {{ include "movie-db-chart.fullname" . }}-movies-env
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "movie-db-chart.fullname" . }}-aws-secret
+                key: AWS_ACCESS_KEY_ID
+                optional: false
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "movie-db-chart.fullname" . }}-aws-secret
+                key: AWS_SECRET_ACCESS_KEY
+                optional: false
+        name: {{ include "movie-db-chart.fullname" . }}-movie-indexer-seed
+        image: "{{ .Values.image.repository }}/movie_indexer:{{ default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["python", "seed.py"]
+      restartPolicy: Never
+  backoffLimit: 4
