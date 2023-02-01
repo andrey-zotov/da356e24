@@ -148,7 +148,7 @@ Most likely this is due to networking overhead of WSL2, this to be confirmed.
 - Clone the repository
 - Copy `.env.dist` to `.env.dev`
 - Only if you will run locally or in docker-compose, for k8s you can skip this step: 
-  - Change `AWS_ENDPOINT_URL`, `MOVIE_SERVER_URL`, `AWS_ENDPOINT_URL_LOCAL` to point to your local IP
+  - Change `AWS_ENDPOINT_URL`, `MOVIE_SERVER_URL` to point to your local IP
 
 ### Running in k8s
 - You might need to import docker registry credentials:

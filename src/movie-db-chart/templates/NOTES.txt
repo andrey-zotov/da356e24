@@ -1,3 +1,3 @@
 Run the command, open locust and enter the URLs to stress test:
-  echo http://$(kubectl get services --namespace {{ .Release.Namespace }} -l "app={{ include "movie-db-chart.fullname" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].spec.clusterIP}")
-  echo http://$(kubectl get services --namespace {{ .Release.Namespace }} -l "app={{ include "movie-db-chart.fullname" . }}-rs,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].spec.clusterIP}")
+echo Python service: http://$(kubectl get services --namespace {{ .Release.Namespace }} -l "app={{ include "movie-db-chart.fullname" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].spec.clusterIP}")
+echo Rust service: http://$(kubectl get services --namespace {{ .Release.Namespace }} -l "app={{ include "movie-db-chart.fullname" . }}-rs,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].spec.clusterIP}")
